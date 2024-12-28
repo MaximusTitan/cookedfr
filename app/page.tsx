@@ -142,29 +142,34 @@ const FortuneTeller = () => {
     return () => window.removeEventListener("mousemove", updateMousePosition);
   }, []);
 
-  const generateFortune = useCallback(() => {
+  const generateFortune = useCallback(async () => {
     if (!name) return;
     setIsLoading(true);
     playPop();
 
-    setTimeout(() => {
-      const fortunes = [
-        `${name}, I see you becoming a professional pickle taste-tester in 2025. Your refined palate will revolutionize the fermented food industry!`,
-        `Yo ${name}! In 2025, you'll accidentally invent a new dance move that goes viral. They'll call it "The ${name.toUpperCase()} Shuffle"!`,
-        `${name}, my crystal ball shows you starting a successful business selling sweaters for plants. Plant fashion is the future!`,
-        `BRUH ${name}! You're going to become a professional cloud naming expert in 2025. No cap!`,
-        `${name}, I see you becoming TikTok famous for teaching math equations through interpretive dance. Your moves will be straight fire!`,
-        `${name} bestie! You'll start a trend where people wear their clothes backwards. Fashion revolution incoming! 💃`,
-        `No cap ${name}, you're gonna create a viral song about coding that hits 1B views! 🎵`,
-        `${name}, I see you becoming the first person to open a successful underwater café! Fish are your customers fr fr`,
-      ];
+    try {
+      const response = await fetch("/api/route", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name }),
+      });
 
-      const randomFortune =
-        fortunes[Math.floor(Math.random() * fortunes.length)];
-      setFortune(randomFortune);
-      setIsLoading(false);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Network response was not ok");
+      }
+
+      const data = await response.json();
+      setFortune(data.fortune);
       playSuccess();
-    }, 1500);
+    } catch (error) {
+      console.error("Error fetching fortune:", error);
+      setFortune("Oops! Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }, [name, playPop, playSuccess]);
 
   const downloadFortuneAsImage = async () => {
@@ -219,7 +224,7 @@ const FortuneTeller = () => {
     return (
       <button
         onClick={cycleTheme}
-        className="absolute top-4 right-4 p-2 rounded-full bg-opacity-20 backdrop-blur-sm"
+        className="absolute top-4 right-4 p-2 rounded-full bg-opacity-50 backdrop-blur-sm bg-black text-white"
         aria-label="Toggle theme"
         disabled={isThemeLoading}
       >
